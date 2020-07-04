@@ -1,0 +1,73 @@
+<html>
+
+	<head>
+		<meta charset="utf-8" />
+		<title>YML</title>
+		<link rel="stylesheet" type="text/css" href="layui/css/layui.css" media="all">
+		<style>
+  			#test2 {
+  				display: table;
+  				margin: 0 auto;
+  				padding-top: 300px;
+  			}
+  			body{
+  				background: url("img/bg.png");
+				background-size: cover;
+  			}
+  		</style>
+	</head>
+
+	<body onload="mqtt()">
+		<div id="test2">
+			<div class="layui-form">
+				<table class="layui-table">
+					<colgroup>
+						<col width="150">
+						<col width="200">
+						<col width="200">
+						<col width="100">
+					</colgroup>
+					<thead>
+						<tr>
+							<th>gateway_mac</th>
+							<th>message</th>
+							<th>tag_mac</th>
+							<th>temperature</th>
+						</tr>
+					</thead>
+					<tbody>
+						<tr>
+							<td id="gateway_mac">/</td>
+							<td id="msg">/</td>
+							<td id="tag_mac">/</td>
+							<td id="tmp">/</td>
+						</tr>
+					</tbody>
+				</table>
+			</div>
+			<script type="text/javascript" src="https://cdn.staticfile.org/jquery/1.10.2/jquery.min.js"></script>
+			<script type="text/javascript">
+				function mqtt() {
+					$.get("/ymlget", {
+						"value": "0"
+					}, function(data) {
+						console.log(data);
+						var obj = JSON.parse(data);
+						$("#gateway_mac").html("<p>" + obj.gateway_mac + "</p>");
+						console.log(obj.gateway_mac);
+						var content = obj.content;
+						$("#msg").html("<p>" + obj.msg + "</p>");
+						console.log(obj.msg);
+						for(var i = 0; i < content.length; i++) {
+							$("#tag_mac").html("<p>" + content[i].tag_mac + "</p>");
+							console.log(content[i].tag_mac);
+							$("#tmp").html("<p>" + content[i].tmp + "°</p>");
+							console.log(content[i].tmp);
+						}
+					})
+				}
+			</script>
+		</div>
+	</body>
+
+</html>

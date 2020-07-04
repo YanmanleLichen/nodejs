@@ -1,0 +1,118 @@
+<!DOCTYPE html>
+<html>
+
+    <head>
+        <meta charset="UTF-8">
+        <title>YML温湿度监测</title>
+        <script type="text/javascript" src="js/echarts.min.js"></script>
+    </head>
+
+    <body onload="myfunction()">
+        <div style="display: flex;justify-content: center;">
+        	<div id="test1" style="width:1200px;height:600px;"></div>
+        </div>
+        <script src="layui/layui.js" charset="utf-8"></script>
+		<script type="text/javascript">
+			var w1, w2;
+			var ws;
+			var websocket_token;
+			var target = "ws://115.28.108.146:8080";
+			function myfunction() {
+				if('WebSocket' in window) {
+					ws = new WebSocket(target);
+				}
+				else{
+					if('MozWebSocket' in window) {
+						ws = new MozMozWebSocket(target);
+					}
+					else{
+						alert("WebSocket is not supported by this browse");
+						return;
+					}
+				}
+			
+				ws.onopen = function() {
+					var type = "address";
+					var msg = 2020052400222037;
+					var token = "b43d0cc2cf65810ee80f5a3775f621a5";
+					var msgs = '{"type":"' + type + '","msg":"' + msg + '","token":"' + token + '"} ';
+					ws.send(msgs);
+				}
+				ws.onmessage = function(event) {
+					var obj = eval('(' + event.data + ')');
+					if(obj.type == "address") {
+						layui.use('layer', function(){
+  							var layer = layui.layer;
+  							layer.msg('服务器连接成功！');
+						});
+					}
+					if(obj.type == "content") {
+						var info = obj.msg;
+						w1 = info[0] + info[1];
+						w2 = info[3] + info[4];
+						w1 = parseInt(w1, 16);
+						w2 = parseInt(w2, 16);
+						console.log(w1);
+						console.log(w2);
+					}
+				}
+				ws.onclose = function() {
+					
+				}
+			};
+            // 基于准备好的dom，初始化echarts实例
+            var myChart = echarts.init(document.getElementById('test1'));
+            // 指定图表的配置项和数据
+            var option = {
+            	title: {
+                	text: '温湿度', //标题文本内容
+            	},
+            	toolbox: { //可视化的工具箱
+                	show: false,
+                	feature: {
+                    	restore: { //重置
+                        	show: true
+                    	},
+                    	saveAsImage: {//保存图片
+                        	show: true
+                    	}
+                	}
+            	},
+            	tooltip: { //弹窗组件
+            	},
+            	series: [
+            		{
+                		name: '温度',
+                		type: 'gauge',
+                		max:50,
+                		tooltip: { //弹窗组件
+                			formatter: "当前{b} : {c}°",
+            			},
+                		center: ['25%', '50%'],
+                		detail: {formatter:'{value}°'},
+                		data: [{value: 0, name: '温度'}]
+            		},
+            		{
+            			name: '湿度',
+                		type: 'gauge',
+                		max:100,
+                		tooltip: { //弹窗组件
+                			formatter: "当前{b} : {c}%"
+                		},
+                		center: ['75%', '50%'],
+                		detail: {formatter:'{value}%'},
+                		data: [{value: 0, name: '湿度'}]
+            		}
+            	]
+            };
+            setInterval(function(){
+                option.series[0].data[0].value = w1;
+                option.series[1].data[0].value = w2;
+                myChart.setOption(option, true);
+            }, 2000);
+            // 使用刚指定的配置项和数据显示图表。
+            myChart.setOption(option,true);
+        </script>
+    </body>
+	
+</html>

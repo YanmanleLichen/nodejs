@@ -1,0 +1,166 @@
+<html>
+	<head>
+		<meta charset="utf-8" />
+		<title>YML2.0</title>
+		<script src="js/echarts.min.js"></script>
+		<link rel="stylesheet" type="text/css" href="layui/css/layui.css" media="all">
+		<style>
+			#test2 {
+				display: table;
+				margin: 0 auto;
+				padding-top: 200px;
+			}
+			
+			body {
+				background: url("img/bg.png");
+				background-size: cover;
+			}
+		</style>
+	</head>
+
+	<body>
+		<div id="test2">
+			<div class="layui-form">
+				<table class="layui-table">
+					<colgroup>
+						<col width="200">
+						<col width="150">
+						<col width="100">
+						<col width="100">
+						<col width="200">
+					</colgroup>
+					<thead>
+						<tr>
+							<th>Mac</th>
+							<th>User</th>
+							<th>Temperature</th>
+							<th>Heart rate</th>
+							<th>Time</th>
+						</tr>
+					</thead>
+					<tbody>
+						<tr>
+							<td id="mac">/</td>
+							<td id="user">/</td>
+							<td id="tmp">/</td>
+							<td id="heart">/</td>
+							<td id="time">/</td>
+						</tr>
+					</tbody>
+				</table>
+				<div class="layui-input-block" style="margin: 0 auto;">
+					<input id="mac_value" name="mac_value" lay-verify="title" autocomplete="off" placeholder="请输入要查找的MAC" class="layui-input">
+				</div>
+				<br>
+				<div class="layui-form-item">
+					<div class="layui-input-block" style="margin: 0 auto">
+						<button style="width: 400px;" class="layui-btn" lay-filter="formDemo" onclick="analysis()">查找</button>
+						<button style="width: 400px;"type="reset" class="layui-btn layui-btn-primary">重置</button>
+					</div>
+				</div>
+			</div>
+		</div>
+		<div id="test1" style="display:none;width: 1000px;height:600px;background:white;margin: 0 auto;margin-bottom: 100px;">
+			<!--  -->
+		</div>
+		<script type="text/javascript" src="https://cdn.staticfile.org/jquery/1.10.2/jquery.min.js"></script>
+		<script type="text/javascript">
+			function mqtt() {
+				$.get("/yml_get", {
+					type: 'post',
+				}, function(data) {
+					//console.log(data);
+					var obj = JSON.parse(data);
+					//console.log(obj);
+					$("#mac").html("<p>" + obj.mac + "</p>");
+					$("#user").html("<p>" + obj.user + "</p>");
+					$("#tmp").html("<p>" + obj.tmp + "</p>");
+					$("#heart").html("<p>" + obj.heart + "</p>");
+					$("#time").html("<p>" + obj.time + "</p>");
+				});
+			};
+			setInterval(mqtt, 2000);
+			var obj1, tmps, hearts, times;
+
+			function analysis() {
+				var mac_value = $("#mac_value").val();
+				console.log(mac_value);
+				console.log("analysis");
+				$.get("/yml_analysis", {
+					"mac_value": mac_value,
+				}, function(data) {
+					console.log(data);
+					obj1 = JSON.parse(data);
+					console.log(obj1);
+					tmps = obj1.tmps;
+					hearts = obj1.hearts;
+					times = obj1.times;
+					for(var j = 0; j < times.length; j++) {
+						times[j] = times[j].substring(0, 19);
+					}
+					$("#test2").attr("style", "padding-top: 50px;")
+					$("#test1").attr("style", "display:block;" +
+						"width: 1000px;height:600px;background:white;margin: 0 auto;margin-bottom: 100px;");
+					var myChart = echarts.init(document.getElementById('test1'));
+					var option = {
+						title: {
+							text: '体能分析'
+						},
+						tooltip: {
+							trigger: 'axis'
+						},
+						legend: {
+							data: ['体温', '心跳']
+						},
+						grid: {
+							left: '3%',
+							right: '4%',
+							bottom: '3%',
+							containLabel: true
+						},
+						toolbox: {
+							show: false,
+							feature: {
+								saveAsImage: {}
+							}
+						},
+						xAxis: {
+							type: 'category',
+							boundaryGap: false,
+							data: [
+								'2020 - 06 - 18 T18: 50: 37',
+								'2020 - 06 - 18 T18: 56: 30',
+								'2020 - 06 - 18 T19: 56: 30',
+								'2020 - 06 - 18 T20: 56: 30'
+							]
+						},
+						yAxis: {
+							type: 'value'
+						},
+						series: [{
+								name: '体温',
+								type: 'line',
+								//stack: '总量',
+								data: [36, 37, 38, 39]
+							},
+							{
+								name: '心跳',
+								type: 'line',
+								//stack: '总量',
+								data: [100, 101, 102, 103]
+							}
+						]
+					};
+					setInterval(function() {
+						option.xAxis.data = times;
+						option.series[0].data = tmps;
+						option.series[1].data = hearts;
+						myChart.setOption(option, true);
+					}, 2000);
+					myChart.setOption(option, true);
+				});
+			};
+		</script>
+	</body>
+
+</html>

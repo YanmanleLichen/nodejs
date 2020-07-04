@@ -1,0 +1,275 @@
+<html>
+
+	<head>
+		<meta charset="utf-8" />
+		<title>YML Street Light Center</title>
+		<script src="js/echarts.min.js"></script>
+		<link rel="stylesheet" type="text/css" href="layui/css/layui.css" media="all">
+		<style>
+			#test2 {
+				display: table;
+				margin: 0 auto;
+				padding-top: 200px;
+			}
+			
+			body {
+				background: url("img/bg.png");
+				background-size: cover;
+			}
+		</style>
+	</head>
+
+	<body>
+		<div id="test2">
+			<div class="layui-form" style="background:white;padding-bottom: 10px;">
+				<table class="layui-table">
+					<colgroup>
+						<col width="200">
+						<col width="120">
+						<col width="50">
+						<col width="200">
+					</colgroup>
+					<thead>
+						<tr>
+							<th>Street Light Number</th>
+							<th>Light Intensity</th>
+							<th>State</th>
+							<th>Time</th>
+						</tr>
+					</thead>
+					<tbody>
+						<tr>
+							<td id="sln">/</td>
+							<td id="li">/</td>
+							<td id="state">/</td>
+							<td id="time">/</td>
+						</tr>
+					</tbody>
+				</table>
+				<div style="display: table;margin: 0 auto;">
+					<a id="auto" href="javascript:void(0)" onclick="yml_auto(this.innerHTML)" class="layui-btn layui-btn-radius">进入自动模式</a>
+					<a id="manual" href="javascript:void(0)" onclick="yml_manual(this.innerHTML)" class="layui-btn layui-btn-radius">进入手动模式</a>
+					<hr />
+					<p id="tip"></p>
+					<hr />
+					<a id="open" href="javascript:void(0)" onclick="yml_open(this.innerHTML)" class="layui-btn layui-btn-radius">打开路灯</a>
+					<a id="close" href="javascript:void(0)" onclick="yml_close(this.innerHTML)" class="layui-btn layui-btn-radius">关闭路灯</a>
+				</div>
+			</div>
+		</div>
+		<br />
+		<div 
+			id="test1" 
+			style="display:none;width: 1000px;height:325px;background:white;margin: 0 auto;margin-bottom: 100px;">
+		</div>
+		<script type="text/javascript" src="https://cdn.staticfile.org/jquery/1.10.2/jquery.min.js"></script>
+		<script type="text/javascript">
+			var state = -1;
+			var li = -1;
+			var old_time;
+			var auto_manual = 0;
+			var obj;
+			analysis();
+			function mqtt_receive() {
+				$.get("/yml_get", {
+					type: 'post',
+				}, function(data) {
+					//console.log(data);
+					obj = JSON.parse(data);
+					
+					if(obj.time != old_time) {
+						$("#sln").html("<p>" + obj.sln + "</p>");
+						$("#li").html("<p>" + obj.li + " Lux</p>");
+						$("#time").html("<p>" + obj.time + "</p>");
+						state = obj.state;
+						li = obj.li;
+						openclose();
+						tips();
+						
+						old_time = obj.time;
+						if(auto_manual == 0) {
+							yml_auto();
+						} else {
+							if(auto_manual == 1) {
+								yml_manual();
+							}
+						}
+					}
+
+				});
+			};
+			setInterval(mqtt_receive, 1000);
+
+			function yml_manual() {
+				auto_manual = 1;
+				$("#manual").attr("style", "display: none;margin: 0 auto;width: 200px;");
+				$("#auto").attr("style", "display: block;margin: 0 auto;width: 200px;");
+				openclose();
+				tips();
+				analysis();
+			}
+
+			function yml_auto() {
+				auto_manual = 0;
+				$("#auto").attr("style", "display: none;margin: 0 auto;width: 200px;");
+				$("#manual").attr("style", "display: block;margin: 0 auto;width: 200px;");
+				if(li < 50) {
+					yml_open();
+				}
+				if(li > 199) {
+					yml_close();
+				}
+				analysis();
+			}
+
+			function yml_open() {
+				$.get("/yml_open", {
+					type: 'get',
+				}, function(data) {
+					console.log(data);
+					if(data.toString() == 'open') {
+						$("#state").html("<p>open</p>");
+						state = 1;
+						openclose();
+						analysis();
+						tips();
+					}
+				});
+			};
+
+			function yml_close() {
+				$.get("/yml_close", {
+					type: 'get',
+				}, function(data) {
+					console.log(data);
+					if(data.toString() == 'close') {
+						$("#state").html("<p>close</p>");
+						state = 0;
+						openclose();
+						analysis();
+						tips();
+					}
+				});
+			};
+
+			function openclose() {
+				if(auto_manual == 1) {
+					if(state == 0) {
+						$("#open").attr("style", "display: block;margin: 0 auto;width: 200px;");
+						$("#close").attr("style", "display: none;margin: 0 auto;width: 200px;");
+						$("#state").html("<p>close</p>");
+					}
+					if(state == 1) {
+						$("#open").attr("style", "display: none;margin: 0 auto;width: 200px;");
+						$("#close").attr("style", "display: block;margin: 0 auto;width: 200px;");
+						$("#state").html("<p>open</p>");
+					}
+				} else {
+					if(auto_manual == 0) {
+						$("#open").attr("style", "display: none;margin: 0 auto;width: 200px;");
+						$("#close").attr("style", "display: none;margin: 0 auto;width: 200px;");
+					}
+				}
+			}
+
+			function tips() {
+				if(state == 0) {
+					if(li < 51) {
+						//alert("光线太暗，请打开路灯！")
+						$("#tip").attr("style", "text-align:center;display: block;margin: 0 auto;");
+						$("#tip").html("提示：光线太暗，请打开路灯！");
+					} else {
+						$("#tip").attr("style", "text-align:center;display: block;margin: 0 auto;");
+						$("#tip").html("提示：暂无。");
+					}
+				}
+				if(state == 1) {
+					if(li > 199) {
+						//alert("光线太亮，请关闭路灯！")
+						$("#tip").attr("style", "text-align:center;display: block;margin: 0 auto;");
+						$("#tip").html("提示：光线太亮，请关闭路灯！");
+					} else {
+						$("#tip").attr("style", "text-align:center;display: block;margin: 0 auto;");
+						$("#tip").html("提示：暂无。");
+					}
+				}
+			}
+			var obj1, slns, lis, states, times;
+			
+			function analysis() {
+				$.get("/yml_analysis", {
+					
+				}, function(data) {
+					console.log(data);
+					obj1 = JSON.parse(data);
+					console.log(obj1);
+					lis = obj1.lis;
+					states = obj1.states;
+					times = obj1.times;
+					for(var j = 0; j < times.length; j++) {
+						times[j] = new Date(times[j].toLocaleString());
+					}
+					$("#test2").attr("style", "padding-top: 50px;")
+					$("#test1").attr("style", "display:block;" +
+						"width: 1000px;height:325px;background:white;margin: 0 auto;margin-bottom: 110px;");
+					var myChart = echarts.init(document.getElementById('test1'));
+					var option = {
+						title: {
+							text: '近20次路灯情况'
+						},
+						tooltip: {
+							trigger: 'axis'
+						},
+						legend: {
+							data: ['光照', '是否开灯，0关1开']
+						},
+						grid: {
+							left: '3%',
+							right: '4%',
+							bottom: '3%',
+							containLabel: true
+						},
+						toolbox: {
+							show: false,
+							feature: {
+								saveAsImage: {}
+							}
+						},
+						xAxis: {
+							type: 'category',
+							boundaryGap: false,
+							data: [
+								'2020 - 06 - 18 T18: 50: 37',
+								'2020 - 06 - 18 T18: 56: 30',
+								'2020 - 06 - 18 T19: 56: 30',
+								'2020 - 06 - 18 T20: 56: 30'
+							]
+						},
+						yAxis: {
+							type: 'value'
+						},
+						series: [{
+								name: '光照',
+								type: 'line',
+								data: [36, 137, 238, 39]
+							},
+							{
+								name: '是否开灯，0关1开',
+								type: 'line',
+								data: [1, 0, 0, 1]
+							}
+						]
+					};
+					setInterval(function() {
+						option.xAxis.data = times;
+						option.series[0].data = lis;
+						option.series[1].data = states;
+						myChart.setOption(option, true);
+					}, 2000);
+					myChart.setOption(option, true);
+				});
+			};
+		</script>
+	</body>
+
+</html>

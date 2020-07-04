@@ -1,0 +1,55 @@
+<html>
+
+<head>
+	<title>
+		YML Street Light Login
+	</title>
+	<link rel="stylesheet" type="text/css" href="layui/css/layui.css" media="all">
+	<style>
+		#test2 {
+			width: 500px;
+			height: 200px;
+			background: powderblue;
+			margin: 0 auto;
+			position: relative;
+			top: 50%;
+			margin-top: -150px;
+			padding-left: -20px;
+			padding-right: 100px;
+			padding-top: 50px;
+			padding-bottom: 5px;
+			border-radius: 25px;
+		}
+
+		body {
+			background: url("img/bg.png");
+			background-size: cover;
+		}
+	</style>
+</head>
+
+<body>
+	<div id="test2">
+		<form class="layui-form" action="http://127.0.0.1:8080/yml_login" lay-filter="example" method="post">
+			<div class="layui-input-block">
+				<input type="text" name="user_name" lay-verify="title" autocomplete="off" placeholder="用户名"
+					class="layui-input">
+			</div>
+			<br>
+			<div class="layui-form-item">
+				<div class="layui-input-block">
+					<input type="password" name="pass_word" placeholder="密码" autocomplete="off" class="layui-input">
+				</div>
+			</div>
+
+			<div class="layui-form-item">
+				<div class="layui-input-block">
+					<button class="layui-btn" type="submit" lay-filter="formDemo">立即提交</button>
+					<button type="reset" class="layui-btn layui-btn-primary">重置</button>
+				</div>
+			</div>
+		</form>
+	</div>
+</body>
+
+</html>
